@@ -18,9 +18,9 @@ This project benchmarks CPU, RAM, and GPU usage while running AI models using **
    - Ensure **Python 3.8+** is installed. If not, download it from [python.org](https://www.python.org/downloads/).
    - Create a virtual environment and activate it:
      ```sh
-     python -m venv venv
-     source venv/bin/activate  # On Linux/Mac
-     venv\Scripts\activate  # On Windows
+     python -m venv env
+     source env/bin/activate  # On Linux/Mac
+     env\Scripts\activate  # On Windows
      ```
    - Install dependencies:
      ```sh
@@ -58,8 +58,8 @@ This project benchmarks CPU, RAM, and GPU usage while running AI models using **
      ```
    - Create a virtual environment and activate it:
      ```sh
-     python3 -m venv venv
-     source venv/bin/activate
+     python3 -m venv env
+     source env/bin/activate
      ```
    - Install dependencies:
      ```sh
