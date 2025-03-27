@@ -117,7 +117,7 @@ def benchmark_model(model, prompt):
     return generated_response
 
 # Save performance plot
-def save_benchmark_plot():
+def save_benchmark_plot(timestamp):
     total_plots = 3 if gpu_available else 2
     plt.figure(figsize=(10, 4 * total_plots))
 
@@ -150,18 +150,15 @@ def save_benchmark_plot():
     else:
         plt.figtext(0.5, 0.01, "Note: GPU not used in this benchmark", ha='center', fontsize=10, color='gray')
 
-    # Save plot
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    save_path = os.path.abspath(f"{timestamp}_benchmark_results.png")
+    save_path = os.path.abspath(f"benchmark_results_{timestamp}.png")
     plt.savefig(save_path, bbox_inches='tight')
     plt.close()
     print(f"📸 Saved plot at: {save_path}")
 
 # Save separated comparison charts in a single figure
-def save_comparison_chart():
+def save_comparison_chart(timestamp):
     labels = MODELS
     x = range(len(labels))
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 
     fig, (ax1, ax2, ax3) = plt.subplots(3, 1, figsize=(10, 12))
 
@@ -180,7 +177,7 @@ def save_comparison_chart():
     fig.suptitle("Model Benchmark Comparison", fontsize=14, fontweight='bold')
     plt.tight_layout(rect=[0, 0, 1, 0.96])
 
-    save_path = os.path.abspath(f"{timestamp}_comparison_summary.png")
+    save_path = os.path.abspath(f"comparison_summary_{timestamp}.png")
     plt.savefig(save_path)
     plt.close()
     print(f"📊 Saved comparison chart at: {save_path}")
@@ -189,12 +186,13 @@ def save_comparison_chart():
 if __name__ == "__main__":
     prompt = "Explain artificial intelligence in simple terms."
     results = {}
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 
     for model in MODELS:
         results[model] = benchmark_model(model, prompt)
 
-    save_benchmark_plot()
-    save_comparison_chart()
+    save_benchmark_plot(timestamp)
+    save_comparison_chart(timestamp)
 
     # Save raw results
     data = {
@@ -213,7 +211,8 @@ if __name__ == "__main__":
         }
     }
 
-    with open("benchmark_results.json", "w") as f:
+    result_file = f"benchmark_results_{timestamp}.json"
+    with open(result_file, "w") as f:
         json.dump(data, f, indent=4)
 
-    print("✅ Benchmarking complete. Results saved to benchmark_results.json")
+    print(f"✅ Benchmarking complete. Results saved to {result_file}")
