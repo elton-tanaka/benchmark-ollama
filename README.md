@@ -10,9 +10,7 @@ This project benchmarks CPU, RAM, and GPU usage while running AI models using **
 ### **🖥️ Windows Installation**
 1. **Install Ollama**
    - Download and install Ollama from the official site:
-     ```sh
-     curl -fsSL https://ollama.com/install.sh | sh
-     ```
+     https://ollama.com/download/windows
 
 2. **Download a Model in Ollama**
    - Before running the benchmark, you must download an AI model compatible with Ollama:
@@ -22,14 +20,14 @@ This project benchmarks CPU, RAM, and GPU usage while running AI models using **
    - Replace `<model-name>` with an available model from [Ollama's official models](https://ollama.com/library/).
    - Example:
      ```sh
-     ollama pull mistral
+     ollama pull deepseek-r1:14b
      ```
 
 3. **Install Python & Create a Virtual Environment**
    - Ensure **Python 3.8+** is installed. If not, download it from [python.org](https://www.python.org/downloads/).
    - Create a virtual environment and activate it:
      ```sh
-     python -m venv env
+     python3 -m venv env
      source env/bin/activate  # On Linux/Mac
      env\Scripts\activate  # On Windows
      ```

@@ -3,3 +3,4 @@ psutil
 matplotlib
 nvidia-ml-py
 nltk
+pynvml

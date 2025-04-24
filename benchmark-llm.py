@@ -9,12 +9,13 @@ import json
 import re
 import nltk
 from nltk.tokenize import word_tokenize
-from nltk.translate.bleu_score import sentence_bleu, SmoothingFunction
+from nltk.translate.bleu_score import sentence_bleu, SmoothingFunction, corpus_bleu
 import math
 
 # Setup BLEU
 nltk.download('punkt')
-smooth_fn = SmoothingFunction().method1
+nltk.download('punkt_tab')
+smooth_fn = SmoothingFunction().method4
 
 # Try to import GPU monitoring
 try:
@@ -22,15 +23,18 @@ try:
     pynvml.nvmlInit()
     gpu_available = True
     gpu_handle = pynvml.nvmlDeviceGetHandleByIndex(0)
-    gpu_name = pynvml.nvmlDeviceGetName(gpu_handle).decode()
-except:
+    gpu_name = pynvml.nvmlDeviceGetName(gpu_handle)
+except Exception as e:
+    print(f"⚠️ Failed to initialize GPU monitoring: {e}")
     gpu_available = False
     gpu_name = None
 
 # Define models to benchmark
 MODELS = [
-    "qwen2.5:14b",  # Example of a standard model
+#    "qwen2.5:14b",  # Example of a standard model
     "deepseek-r1:14b",  # Example of a compressed model
+#    "deepseek-r1:7b",
+#    "qwen2.5:7b"
 ]
 
 # Get system hardware info
@@ -52,7 +56,8 @@ token_counts = {}
 stop_event = threading.Event()
 
 # Reference response
-REFERENCE_RESPONSE = "Artificial intelligence is the simulation of human intelligence by machines."
+REFERENCE_SET = []
+REFERENCE_SET.append("In recent years, the adoption of AI model‑compression techniques has made it possible to run advanced neural networks on edge devices. By combining parameter pruning, weight quantization, and knowledge distillation, researchers have cut memory usage by as much as 80 % with no significant loss in accuracy. This progress paves the way for computer‑vision and natural‑language‑processing applications on smartphones, drones, and industrial sensors, removing the need for a constant cloud connection.")
 
 # Text cleaner
 def clean_and_tokenize(text):
@@ -104,16 +109,28 @@ def benchmark_model(model, prompt):
     token_counts[model] = token_count
 
     # Clean and compute BLEU
-    reference_tokens = clean_and_tokenize(REFERENCE_RESPONSE)
-    generated_tokens = clean_and_tokenize(generated_response)
-    bleu_score = sentence_bleu([reference_tokens], generated_tokens, smoothing_function=smooth_fn)
-    bleu_scores[model] = bleu_score
+    all_references = []   # [[ref_tokens1, ref_tokens2, ...], ...]
+    all_hypotheses = []   # [hyp_tokens1, hyp_tokens2, ...]
+
+    for ref_text in REFERENCE_SET:
+        ref_tokens = clean_and_tokenize(ref_text)
+        hyp_tokens = clean_and_tokenize(generated_response)
+
+        all_references.append([ref_tokens])          # wrap each ref in its own list
+        all_hypotheses.append(hyp_tokens)
+
+    bleu = corpus_bleu(
+        all_references,
+        all_hypotheses,
+        smoothing_function=smooth_fn
+    )
+    bleu_scores[model] = bleu
 
     # Compute Perplexity
     perplexity = calculate_perplexity(generated_response)
     perplexity_scores[model] = perplexity
 
-    print(f"✅ Inference Time: {inference_time:.2f}s | BLEU: {bleu_score:.2f} | Perplexity: {perplexity:.2f} | Tokens: {token_count} | Peak CPU: {peak_cpu_usage[model]:.2f}%")
+    print(f"✅ Inference Time: {inference_time:.2f}s | BLEU: {bleu:.2f} | Perplexity: {perplexity:.2f} | Tokens: {token_count} | Peak CPU: {peak_cpu_usage[model]:.2f}%")
     return generated_response
 
 # Save performance plot
@@ -184,7 +201,7 @@ def save_comparison_chart(timestamp):
 
 # Main execution
 if __name__ == "__main__":
-    prompt = "Explain artificial intelligence in simple terms."
+    prompt = "Task: Translate the following Brazilian‑Portuguese passage into natural, idiomatic English. Text (PT‑BR): Nos últimos anos, a adoção de técnicas de compressão de modelos de inteligência artificial tem permitido executar redes neurais avançadas em dispositivos de borda. Ao combinar poda de parâmetros, quantização de pesos e destilação de conhecimento, pesquisadores reduziram o consumo de memória em até 80 % sem perda significativa de precisão. Essa evolução abre caminho para aplicações de visão computacional e processamento de linguagem natural em smartphones, drones e sensores industriais, eliminando a dependência de conexões constantes com a nuvem."
     results = {}
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 
