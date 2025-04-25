@@ -31,10 +31,16 @@ except Exception as e:
 
 # Define models to benchmark
 MODELS = [
-#    "qwen2.5:14b",  # Example of a standard model
-    "deepseek-r1:14b",  # Example of a compressed model
+#    "deepseek-r1:32b",
+#    "qwen2.5:32b",
+#    "qwen2.5:14b",
+    "deepseek-r1:14b",  
 #    "deepseek-r1:7b",
-#    "qwen2.5:7b"
+#    "qwen2.5:7b",
+#    "llama3",
+    # "deepseek-r1:14b-qwen-distill-fp16",
+    # "deepseek-r1:14b-qwen-distill-q8_0",
+    # "deepseek-r1:14b-qwen-distill-q4_k_M",
 ]
 
 # Get system hardware info
@@ -52,15 +58,22 @@ inference_times = {}
 bleu_scores = {}
 perplexity_scores = {}
 peak_cpu_usage = {}
+avg_cpu_usage = {}
+avg_ram_usage = {}
+avg_gpu_usage = {} if gpu_available else None
 token_counts = {}
 stop_event = threading.Event()
 
 # Reference response
 REFERENCE_SET = []
 REFERENCE_SET.append("In recent years, the adoption of AI model‑compression techniques has made it possible to run advanced neural networks on edge devices. By combining parameter pruning, weight quantization, and knowledge distillation, researchers have cut memory usage by as much as 80 % with no significant loss in accuracy. This progress paves the way for computer‑vision and natural‑language‑processing applications on smartphones, drones, and industrial sensors, removing the need for a constant cloud connection.")
+REFERENCE_SET.append("In recent years, the adoption of AI model compression techniques has made it possible to run advanced neural networks on edge devices. By combining parameter pruning, weight quantization, and knowledge distillation, researchers have reduced memory usage by up to 80% without significantly compromising accuracy. This advancement paves the way for computer vision and natural language processing applications on smartphones, drones, and industrial sensors, eliminating the need for constant cloud connectivity.")
+REFERENCE_SET.append("In recent years, the adoption of AI model compression techniques has made it possible to run advanced neural networks on edge devices. By combining parameter pruning, weight quantization, and knowledge distillation, researchers have reduced memory usage by up to 80% without significantly compromising accuracy. This advancement paves the way for computer vision and natural language processing applications on smartphones, drones, and industrial sensors—removing the need for constant cloud connectivity.")
 
 # Text cleaner
 def clean_and_tokenize(text):
+    # Remove <think>...</think> tags and their content, this is due to deepseek model
+    text = re.sub(r'<think>.*?</think>', '', text, flags=re.DOTALL)
     text = re.sub(r'[^\w\s]', '', text.lower())
     return word_tokenize(text)
 
@@ -103,19 +116,22 @@ def benchmark_model(model, prompt):
     inference_time = end_time - start_time
     inference_times[model] = inference_time
     peak_cpu_usage[model] = max(cpu_usage[model]) if cpu_usage[model] else 0
+    avg_cpu_usage[model] = sum(cpu_usage[model]) / len(cpu_usage[model]) if cpu_usage[model] else 0
+    avg_ram_usage[model] = sum(ram_usage[model]) / len(ram_usage[model]) if ram_usage[model] else 0
+    if gpu_available:
+        avg_gpu_usage[model] = sum(gpu_usage[model]) / len(gpu_usage[model]) if gpu_usage[model] else 0
 
     generated_response = response.get("message", {}).get("content", "No response")
     token_count = len(generated_response.split())
     token_counts[model] = token_count
 
     # Clean and compute BLEU
-    all_references = []   # [[ref_tokens1, ref_tokens2, ...], ...]
-    all_hypotheses = []   # [hyp_tokens1, hyp_tokens2, ...]
+    all_references = []
+    all_hypotheses = []
 
     for ref_text in REFERENCE_SET:
         ref_tokens = clean_and_tokenize(ref_text)
         hyp_tokens = clean_and_tokenize(generated_response)
-
         all_references.append([ref_tokens])          # wrap each ref in its own list
         all_hypotheses.append(hyp_tokens)
 
@@ -219,6 +235,9 @@ if __name__ == "__main__":
         "perplexity_scores": perplexity_scores,
         "token_counts": token_counts,
         "peak_cpu_usage": peak_cpu_usage,
+        "avg_cpu_usage": avg_cpu_usage,
+        "avg_ram_usage": avg_ram_usage,
+        "avg_gpu_usage": avg_gpu_usage if gpu_available else "None",
         "hardware": {
             "cpu": cpu_name,
             "cpu_cores": cpu_cores,

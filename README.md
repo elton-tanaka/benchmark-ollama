@@ -29,7 +29,7 @@ This project benchmarks CPU, RAM, and GPU usage while running AI models using **
      ```sh
      python3 -m venv env
      source env/bin/activate  # On Linux/Mac
-     env\Scripts\activate  # On Windows
+     env\Scripts\activate.bat  # On Windows
      ```
    - Install dependencies from `requirements.txt`:
      ```sh
